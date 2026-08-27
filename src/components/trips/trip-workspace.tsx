@@ -22,7 +22,7 @@ import { calculatePricing, getMarginStatus } from "@/lib/calculations/pricing";
 import { convertToIDR, type CurrencyRates } from "@/lib/currency";
 import { formatIDR, formatDateShort } from "@/lib/format";
 import { MARGIN_STATUS_LABELS, TRAVEL_STYLE_LABELS } from "@/lib/constants";
-import { toNumber } from "@/lib/decimal";
+import { toNumber, toNumberOrNull } from "@/lib/decimal";
 import { toast } from "@/store/toast";
 import type { CostItemDraft } from "@/lib/types/cost-draft";
 import type { TripDetail } from "@/lib/queries/trips";
@@ -58,8 +58,8 @@ export function TripWorkspace({
       unitPrice: toNumber(cost.unitPrice),
       quantity: toNumber(cost.quantity),
       participants: cost.participants,
-      days: cost.days,
-      nights: cost.nights,
+      days: toNumberOrNull(cost.days),
+      nights: toNumberOrNull(cost.nights),
       notes: cost.notes ?? "",
       costDatabaseItemId: cost.costDatabaseItemId,
     })),

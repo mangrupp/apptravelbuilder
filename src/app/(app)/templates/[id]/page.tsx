@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db/prisma";
 import { TemplateForm } from "@/components/templates/template-form";
-import { toNumber } from "@/lib/decimal";
+import { toNumber, toNumberOrNull } from "@/lib/decimal";
 
 export default async function EditTemplatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -39,8 +39,8 @@ export default async function EditTemplatePage({ params }: { params: Promise<{ i
             unitPrice: toNumber(item.unitPrice),
             quantity: toNumber(item.quantity),
             participants: item.participants,
-            days: item.days,
-            nights: item.nights,
+            days: toNumberOrNull(item.days),
+            nights: toNumberOrNull(item.nights),
             notes: item.notes ?? "",
             costDatabaseItemId: null,
           })),

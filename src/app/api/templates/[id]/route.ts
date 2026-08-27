@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
-import { toNumber } from "@/lib/decimal";
+import { toNumber, toNumberOrNull } from "@/lib/decimal";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,8 +31,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       unitPrice: toNumber(item.unitPrice),
       quantity: toNumber(item.quantity),
       participants: item.participants,
-      days: item.days,
-      nights: item.nights,
+      days: toNumberOrNull(item.days),
+      nights: toNumberOrNull(item.nights),
       notes: item.notes ?? "",
     })),
   });

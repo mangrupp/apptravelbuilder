@@ -149,8 +149,8 @@ model TripCost {
   unitPrice    Decimal  @db.Decimal(14, 2)
   quantity     Decimal  @default(1) @db.Decimal(10, 2)
   participants Int?
-  days         Int?
-  nights       Int?
+  days         Decimal? @db.Decimal(6, 2)
+  nights       Decimal? @db.Decimal(6, 2)
   total        Decimal  @db.Decimal(14, 2)
   baseAmountIDR Decimal @db.Decimal(14, 2)
   exchangeRate Decimal  @default(1) @db.Decimal(14, 6)
@@ -216,8 +216,8 @@ model TripTemplateCostItem {
   unitPrice    Decimal  @db.Decimal(14, 2)
   quantity     Decimal  @default(1) @db.Decimal(10, 2)
   participants Int?
-  days         Int?
-  nights       Int?
+  days         Decimal? @db.Decimal(6, 2)
+  nights       Decimal? @db.Decimal(6, 2)
   notes        String?
 
   @@index([templateId])

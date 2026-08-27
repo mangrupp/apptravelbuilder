@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db/prisma";
 import { getCurrentUserId } from "@/lib/auth/require-user";
 import { getSettingsForCurrentUser } from "@/lib/queries/settings";
 import { computeTripPricing } from "@/lib/calculations/computeTrip";
-import { toNumber } from "@/lib/decimal";
+import { toNumber, toNumberOrNull } from "@/lib/decimal";
 import type { ActionResult } from "@/lib/actions/customers";
 import { aiRecommendationActionSchema } from "@/lib/ai/schema";
 
@@ -59,8 +59,8 @@ export async function applyAIOptimization(tripId: string, input: unknown): Promi
         unitPrice: change?.suggestedUnitPrice ?? toNumber(cost.unitPrice),
         quantity: change?.suggestedQuantity ?? toNumber(cost.quantity),
         participants: cost.participants,
-        days: cost.days,
-        nights: cost.nights,
+        days: toNumberOrNull(cost.days),
+        nights: toNumberOrNull(cost.nights),
         notes: cost.notes,
         costDatabaseItemId: cost.costDatabaseItemId,
       };

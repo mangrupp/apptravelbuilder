@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { TemplateRowActions } from "@/components/templates/template-row-actions";
 import { TRAVEL_STYLE_LABELS } from "@/lib/constants";
 import { formatIDR } from "@/lib/format";
-import { toNumber } from "@/lib/decimal";
+import { toNumber, toNumberOrNull } from "@/lib/decimal";
 import { calculateBaseCostFromItems } from "@/lib/calculations/pricing";
 
 export default async function TemplatesPage() {
@@ -50,8 +50,8 @@ export default async function TemplatesPage() {
                 unitPrice: toNumber(item.unitPrice),
                 quantity: toNumber(item.quantity),
                 participants: item.participants,
-                days: item.days,
-                nights: item.nights,
+                days: toNumberOrNull(item.days),
+                nights: toNumberOrNull(item.nights),
               })),
             );
             return (
