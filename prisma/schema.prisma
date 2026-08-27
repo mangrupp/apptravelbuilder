@@ -1,0 +1,309 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CostCategory {
+  FLIGHT
+  ACCOMMODATION
+  TRANSPORTATION
+  ACTIVITY
+  MEAL
+  OTHER
+}
+
+enum TripStatus {
+  DRAFT
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  APPROVED
+  EXPIRED
+}
+
+enum TravelStyle {
+  BUDGET
+  STANDARD
+  PREMIUM
+  LUXURY
+}
+
+enum Currency {
+  IDR
+  MYR
+  SGD
+  THB
+  JPY
+  USD
+  EUR
+}
+
+enum ServiceFeeType {
+  FIXED
+  PERCENTAGE
+}
+
+enum AIRecommendationStatus {
+  PENDING
+  APPLIED
+  DISMISSED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  settings Settings?
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  whatsapp  String?
+  email     String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  trips       Trip[]
+  quotations  Quotation[]
+
+  @@index([name])
+}
+
+model Trip {
+  id       String @id @default(cuid())
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  customerId String
+
+  destination   String
+  country       String?
+  city          String?
+  departureCity String?
+  tripType      String?
+  departureDate DateTime
+  returnDate    DateTime
+  days          Int
+  nights        Int
+  travelStyle   TravelStyle @default(STANDARD)
+  currency      Currency    @default(IDR)
+  customerBudget Decimal?   @db.Decimal(14, 2)
+  status        TripStatus  @default(DRAFT)
+
+  baseCost         Decimal @default(0) @db.Decimal(14, 2)
+  contingencyPercent Decimal @default(5) @db.Decimal(6, 3)
+  contingencyAmount Decimal @default(0) @db.Decimal(14, 2)
+  serviceFeeType    ServiceFeeType @default(PERCENTAGE)
+  serviceFeeValue   Decimal @default(0) @db.Decimal(14, 2)
+  serviceFee        Decimal @default(0) @db.Decimal(14, 2)
+  markupPercentage  Decimal @default(15) @db.Decimal(6, 3)
+  sellingPrice      Decimal @default(0) @db.Decimal(14, 2)
+  profit            Decimal @default(0) @db.Decimal(14, 2)
+  margin            Decimal @default(0) @db.Decimal(6, 3)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  traveler         Traveler?
+  costs            TripCost[]
+  quotations       Quotation[]
+  aiRecommendations AIRecommendation[]
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model Traveler {
+  id      String @id @default(cuid())
+  trip    Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tripId  String @unique
+
+  adults   Int @default(1)
+  children Int @default(0)
+  infants  Int @default(0)
+  total    Int @default(1)
+}
+
+model TripCost {
+  id     String @id @default(cuid())
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tripId String
+
+  category     CostCategory
+  description  String
+  supplier     String?
+  currency     Currency @default(IDR)
+  unitPrice    Decimal  @db.Decimal(14, 2)
+  quantity     Decimal  @default(1) @db.Decimal(10, 2)
+  participants Int?
+  days         Int?
+  nights       Int?
+  total        Decimal  @db.Decimal(14, 2)
+  baseAmountIDR Decimal @db.Decimal(14, 2)
+  exchangeRate Decimal  @default(1) @db.Decimal(14, 6)
+  notes        String?
+
+  costDatabaseItemId String?
+  costDatabaseItem   CostDatabaseItem? @relation(fields: [costDatabaseItemId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tripId])
+  @@index([category])
+}
+
+model CostDatabaseItem {
+  id          String       @id @default(cuid())
+  name        String
+  category    CostCategory
+  destination String?
+  supplier    String?
+  currency    Currency     @default(IDR)
+  cost        Decimal      @db.Decimal(14, 2)
+  unit        String?
+  notes       String?
+  isDemo      Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  tripCosts TripCost[]
+
+  @@index([category])
+  @@index([destination])
+}
+
+model TripTemplate {
+  id                 String      @id @default(cuid())
+  name               String
+  destination        String
+  country            String?
+  city               String?
+  duration           Int
+  travelStyle        TravelStyle @default(STANDARD)
+  description        String?
+  defaultMarkup      Decimal     @default(15) @db.Decimal(6, 3)
+  defaultContingency Decimal     @default(5) @db.Decimal(6, 3)
+  isDemo             Boolean     @default(false)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  costItems TripTemplateCostItem[]
+}
+
+model TripTemplateCostItem {
+  id         String       @id @default(cuid())
+  template   TripTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId String
+
+  category     CostCategory
+  description  String
+  supplier     String?
+  currency     Currency @default(IDR)
+  unitPrice    Decimal  @db.Decimal(14, 2)
+  quantity     Decimal  @default(1) @db.Decimal(10, 2)
+  participants Int?
+  days         Int?
+  nights       Int?
+  notes        String?
+
+  @@index([templateId])
+}
+
+model Quotation {
+  id              String          @id @default(cuid())
+  trip            Trip            @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tripId          String
+  quotationNumber String          @unique
+  customer        Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  customerId      String
+  status          QuotationStatus @default(DRAFT)
+
+  subtotal     Decimal @db.Decimal(14, 2)
+  contingency  Decimal @db.Decimal(14, 2)
+  serviceFee   Decimal @db.Decimal(14, 2)
+  sellingPrice Decimal @db.Decimal(14, 2)
+
+  validUntil DateTime
+  terms      String?  @db.Text
+  notes      String?  @db.Text
+
+  showInternalFinancials Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items QuotationItem[]
+
+  @@index([tripId])
+  @@index([customerId])
+  @@index([status])
+}
+
+model QuotationItem {
+  id          String    @id @default(cuid())
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  quotationId String
+
+  category    CostCategory
+  description String
+  amount      Decimal      @db.Decimal(14, 2)
+  sortOrder   Int          @default(0)
+
+  @@index([quotationId])
+}
+
+model AIRecommendation {
+  id     String @id @default(cuid())
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tripId String
+
+  question          String?  @db.Text
+  responseJson       Json
+  status            AIRecommendationStatus @default(PENDING)
+  potentialSavings  Decimal? @db.Decimal(14, 2)
+  appliedAt         DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([tripId])
+}
+
+model Settings {
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+
+  companyName    String @default("My Travel Agency")
+  companyAddress String?
+  companyPhone   String?
+  companyEmail   String?
+
+  defaultCurrency     Currency @default(IDR)
+  defaultMarkup       Decimal  @default(15) @db.Decimal(6, 3)
+  defaultContingency  Decimal  @default(5) @db.Decimal(6, 3)
+  defaultServiceFeeType  ServiceFeeType @default(PERCENTAGE)
+  defaultServiceFeeValue Decimal @default(0) @db.Decimal(14, 2)
+
+  quotationTerms String? @db.Text
+
+  showInternalFinancials Boolean @default(false)
+
+  currencyRates Json @default("{\"IDR\":1,\"MYR\":3600,\"SGD\":12000,\"THB\":440,\"JPY\":105,\"USD\":16000,\"EUR\":17500}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
